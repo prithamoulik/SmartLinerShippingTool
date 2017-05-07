@@ -143,7 +143,7 @@ func (t *SmartLinerShippingTool) Init(stub shim.ChaincodeStubInterface, function
 
 	// Create application Table
 	err = stub.CreateTable("ShipDetails", []*shim.ColumnDefinition{
-		&shim.ColumnDefinition{Name: "shipId", Type: shim.ColumnDefinition_STRING, Key: false},
+		&shim.ColumnDefinition{Name: "shipId", Type: shim.ColumnDefinition_STRING, Key: true},
 		&shim.ColumnDefinition{Name: "vesselName", Type: shim.ColumnDefinition_STRING, Key: false},
 		&shim.ColumnDefinition{Name: "voyageNo", Type: shim.ColumnDefinition_STRING, Key: false},
 		&shim.ColumnDefinition{Name: "linerCompanyName", Type: shim.ColumnDefinition_STRING, Key: false},
@@ -164,15 +164,7 @@ func (t *SmartLinerShippingTool) Init(stub shim.ChaincodeStubInterface, function
 		return nil, nil
 	}
 
-	// Create Container Table
-	err = stub.CreateTable("ContainerShippingDetails", []*shim.ColumnDefinition{
-		&shim.ColumnDefinition{Name: "shipId", Type: shim.ColumnDefinition_STRING, Key: false},
-		&shim.ColumnDefinition{Name: "containerId", Type: shim.ColumnDefinition_STRING, Key: false},
-		
-	})
-	if err != nil {
-		return nil, errors.New("Failed creating ContainerShippingDetails table.")
-	}
+	
 	// Check if table already exists
 	//CONTAINER TYPE - START
 	_, err = stub.GetTable("ContainerDetails")
@@ -183,7 +175,7 @@ func (t *SmartLinerShippingTool) Init(stub shim.ChaincodeStubInterface, function
 
 	// Create ContainerDetails Table
 	err = stub.CreateTable("ContainerDetails", []*shim.ColumnDefinition{
-		&shim.ColumnDefinition{Name: "containerId", Type: shim.ColumnDefinition_STRING, Key: false},
+		&shim.ColumnDefinition{Name: "containerId", Type: shim.ColumnDefinition_STRING, Key: true},
 		&shim.ColumnDefinition{Name: "shipId", Type: shim.ColumnDefinition_STRING, Key: false},
 		&shim.ColumnDefinition{Name: "containerType", Type: shim.ColumnDefinition_STRING, Key: false},
 		&shim.ColumnDefinition{Name: "size", Type: shim.ColumnDefinition_STRING, Key: false},
@@ -191,13 +183,14 @@ func (t *SmartLinerShippingTool) Init(stub shim.ChaincodeStubInterface, function
 		&shim.ColumnDefinition{Name: "codeISO", Type: shim.ColumnDefinition_STRING, Key: false},
 	})
 	if err != nil {
-		return nil, errors.New("Failed creating User table.")
+		return nil, errors.New("Failed creating ContainerDetails table.")
 	}
 	//CONTAINER TYPE - END
-		
+	
+	
 	//CHECK Below - Can 2 states be given?
 	stub.PutState("ContainerDetailsIncrement", []byte("1"))
-	
+
 	return nil, nil
 }
 // generate booking number for shipping item
@@ -215,8 +208,9 @@ func (t *SmartLinerShippingTool) addShipDetails(stub shim.ChaincodeStubInterface
 		longitude:=args[5]
 		capacity:=args[6]
 		numberOfContainerFilledUp:=args[6]
-				
-		// Insert a row into Ship Details Table
+		
+		
+		// Insert a row
 		ok, err := stub.InsertRow("ShipDetails", shim.Row{
 			Columns: []*shim.Column{
 				&shim.Column{Value: &shim.Column_String_{String_: shipId}},
@@ -282,6 +276,7 @@ func (t *SmartLinerShippingTool) getShipDetailsByShipId(stub shim.ChaincodeStubI
 	return mapB, nil
 
 }
+
 //view all ship details from ship_details table
 func (t *SmartLinerShippingTool) viewAllShipDetails(stub shim.ChaincodeStubInterface, args []string) ([]byte, error) {
 
@@ -629,22 +624,22 @@ func (t *SmartLinerShippingTool) Invoke(stub shim.ChaincodeStubInterface, functi
 		return t.loadContainerIntoLiner(stub, args)
 	}else if function == "updateShipLocation" {
 		return t.updateShipLocation(stub, args)
+	}else if function == "raiseEventToMoveContainer" {
+		return t.raiseEventToMoveContainer(stub, args)
 	}
-		fmt.Println("invoke did not find func: " + function)
+	fmt.Println("invoke did not find func: " + function)
 
 	return nil, errors.New("Received unknown function invocation: " + function)
 }
 // Query is our entry point for queries
 func (t *SmartLinerShippingTool) Query(stub shim.ChaincodeStubInterface, function string, args []string) ([]byte, error) {
 
-	 if function == "raiseEventToMoveContainer" {
-		t := SmartLinerShippingTool{}
-		return t.raiseEventToMoveContainer(stub, args)		
-	} else if function == "getShipDetailsByShipId" {
+    if function == "getShipDetailsByShipId" {
 		return t.getShipDetailsByShipId(stub, args)
 	}else if function == "viewAllShipDetails" {
 		return t.viewAllShipDetails(stub, args)
 	}
+		
 	return nil, errors.New("Invalid query function name.")
 }
 
